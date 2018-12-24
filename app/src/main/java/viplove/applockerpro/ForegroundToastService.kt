@@ -75,7 +75,7 @@ class ForegroundToastService : Service() {
             }
             .whenOther { packageName ->
                 //Toast.makeText(baseContext, "Foreground: $packageName", Toast.LENGTH_SHORT).show()
-                if (packageName == "com.whatsapp") {
+                if (session?.getStringSet(Session.APP_LIST)?.contains(packageName) == true) {
                     if (session?.getStringValue(Session.CURRENT) == packageName) {
                     } else {
                         session?.getCurrent(packageName)
@@ -92,7 +92,7 @@ class ForegroundToastService : Service() {
     }
 
     private fun stopChecker() {
-        appChecker!!.stop()
+        appChecker?.stop()
     }
 
     private fun registerReceivers() {
@@ -118,7 +118,7 @@ class ForegroundToastService : Service() {
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(false)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText("Tap to Stop Service")
+                .setContentText("Service Running")
                 .setWhen(0)
                 .build()
             /*.setContentIntent(
@@ -136,7 +136,7 @@ class ForegroundToastService : Service() {
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(false)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText("Tap to Stop Service")
+                .setContentText("Service Running")
                 .setContentIntent(
                     PendingIntent.getBroadcast(
                         this,

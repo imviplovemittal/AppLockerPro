@@ -14,12 +14,12 @@ import android.content.pm.ResolveInfo
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.design.widget.NavigationView
+import android.support.v4.content.ContextCompat
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.text.Html
-import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import com.rvalerio.fgchecker.Utils.hasUsageStatsPermission
@@ -35,10 +35,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var progressDialog: ProgressDialog? = null
     var res: ArrayList<AppInfo>? = null
-    var devicePolicyManager: DevicePolicyManager? = null
-    var activityManager: ActivityManager? = null
-    var compName: ComponentName? = null
-    var forgroundToastService: ForegroundToastService? = null
+    private var devicePolicyManager: DevicePolicyManager? = null
+    private var activityManager: ActivityManager? = null
+    private var compName: ComponentName? = null
+    private var forgroundToastService: ForegroundToastService? = null
+    private var selectedAppList: HashSet<String>? = null
+    private var session: Session? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toggle = ActionBarDrawerToggle(
             this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
+        toggle.drawerArrowDrawable.color = ContextCompat.getColor(this, R.color.colorPrimaryDark)
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
 
@@ -59,7 +62,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun initialise() {
 
         supportActionBar?.title = Html.fromHtml("<font color=\"#008577\">" + getString(R.string.app_name) + "</font>")
-
+        session = Session(this)
+        selectedAppList = session?.getStringSet(Session.APP_LIST) as HashSet<String>
         forgroundToastService = ForegroundToastService()
 
         if (!hasUsageStatsPermission(this)) {
@@ -86,15 +90,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         doit().execute()
 
-        /*val mActivityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val RunningTask = mActivityManager.getRunningTasks(1)
-        val ar = RunningTask[0]
-        val activityOnTop = ar.topActivity.packageName
-        Toast.makeText(this, activityOnTop, Toast.LENGTH_SHORT).show()
-        Log.d("Task", activityOnTop)
-*/
-
         start_button.setOnClickListener {
+            session?.saveCheckedAppList(AppAdapter.statified.newAppList)
             forgroundToastService?.start(baseContext)
             Toast.makeText(baseContext, "Service Started", Toast.LENGTH_SHORT).show()
             finish()
@@ -141,7 +138,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             try {
                 app_recycler.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
                 app_recycler.setHasFixedSize(true)
-                app_recycler.adapter = AppAdapter(this@MainActivity, res!!)
+                app_recycler.adapter = AppAdapter(this@MainActivity, res!!, selectedAppList!!)
                 progressDialog?.dismiss()
             } catch (e: java.lang.Exception) {
                 progressDialog?.dismiss()
@@ -194,11 +191,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+    /*override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
-    }
+    }*/
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle action bar item clicks here. The action bar will
@@ -206,9 +203,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             R.id.action_settings -> {
-                forgroundToastService?.start(baseContext)
-                Toast.makeText(baseContext, "Service Started", Toast.LENGTH_SHORT).show()
-                finish()
+                forgroundToastService?.stop(baseContext)
                 return true
             }
             else -> return super.onOptionsItemSelected(item)

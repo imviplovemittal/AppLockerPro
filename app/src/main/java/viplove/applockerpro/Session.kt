@@ -95,7 +95,16 @@ class Session(val context: Context) {
         editor?.apply()
     }
 
+    fun saveCheckedAppList(appList: Set<String>) {
+        editor = sharedPreferences.edit()
+        editor?.putStringSet(APP_LIST, appList)
+        editor?.apply()
+    }
+
     fun getStringValue(key: String, default: String? = null) = sharedPreferences.getString(key, default)
+
+    fun getStringSet(key: String, default: Set<String>? = HashSet()) =
+        sharedPreferences.getStringSet(key, default)
 
     fun getBooleanValue(key: String, default: Boolean = false) = sharedPreferences.getBoolean(key, default)
 
@@ -109,6 +118,7 @@ class Session(val context: Context) {
         private const val IS_FRESH_INSTALL = "is_fresh_install"
 
         const val CURRENT = "current"
+        const val APP_LIST = "app_list"
 
         const val ID = "id"
         const val USER_NAME = "user_name"

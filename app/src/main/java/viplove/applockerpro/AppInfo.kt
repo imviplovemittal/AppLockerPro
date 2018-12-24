@@ -1,8 +1,14 @@
 package viplove.applockerpro
 
 import android.graphics.drawable.Drawable
+import java.io.Serializable
 
-class AppInfo {
+class AppInfo: Serializable {
+
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     var appname = ""
     var pname = ""
     var versionName = ""

@@ -7,8 +7,12 @@ import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.layout_app_card.view.*
 
-class AppAdapter(val context: Context, private val apps: List<AppInfo>) :
+class AppAdapter(val context: Context, private val apps: List<AppInfo>, val selectedAppList: HashSet<String>) :
     RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+
+    object statified {
+        val newAppList = HashSet<String>()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
         ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.layout_app_card, parent, false))
@@ -25,6 +29,14 @@ class AppAdapter(val context: Context, private val apps: List<AppInfo>) :
             itemView.app_name.text = app.appname
             itemView.app_package.text = app.pname
             itemView.app_version.text = "Version: %s".format(app.versionName)
+            itemView.app_check_box.isChecked = selectedAppList.contains(app.pname) ||
+                    statified.newAppList.contains(app.pname)
+            itemView.app_check_box.setOnClickListener {
+                if (statified.newAppList.contains(app.pname))
+                    statified.newAppList.remove(app.pname)
+                else
+                    statified.newAppList.add(app.pname)
+            }
         }
     }
 }
