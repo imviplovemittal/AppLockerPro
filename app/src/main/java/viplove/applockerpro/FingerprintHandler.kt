@@ -32,7 +32,7 @@ class FingerprintHandler(private val context: Context, private val mPackageName:
         ) {
             return
         }
-        manager.authenticate(cryptoObject, cancellationSignal, 0, this, null)
+        manager?.authenticate(cryptoObject, cancellationSignal, 0, this, null)
     }
 
     override//onAuthenticationError is called when a fatal error has occurred. It provides the error code and error message as its parameters//
@@ -63,8 +63,8 @@ class FingerprintHandler(private val context: Context, private val mPackageName:
         Toast.makeText(context, "Success!", Toast.LENGTH_LONG).show()
         with(context as LockActivity) {
             fingerprint_icon.setImageResource(R.drawable.ic_fingerprint)
-            val launchIntent = getPackageManager().getLaunchIntentForPackage(mPackageName)
-            startActivity(launchIntent)
+            /*val launchIntent = getPackageManager().getLaunchIntentForPackage(mPackageName)
+            startActivity(launchIntent)*/
             finish()
         }
 

@@ -1,9 +1,12 @@
 package viplove.applockerpro
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.ProgressDialog
+import android.app.admin.DevicePolicyManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -16,7 +19,6 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.text.Html
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -33,6 +35,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var progressDialog: ProgressDialog? = null
     var res: ArrayList<AppInfo>? = null
+    var devicePolicyManager: DevicePolicyManager? = null
+    var activityManager: ActivityManager? = null
+    var compName: ComponentName? = null
     var forgroundToastService: ForegroundToastService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +66,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             usageAccessSettingsPage()
             Toast.makeText(this, "Enable App Locker Pro", Toast.LENGTH_LONG).show()
         }
+        devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        compName = ComponentName(this, MyAdmin::class.java)
+        val active = devicePolicyManager?.isAdminActive(compName)
+        if (!active!!) {
+            val i = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+            i.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName)
+            i.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Enable Device Admin to stop uninstall")
+            startActivityForResult(i, 499)
+        }
+
 
         res = ArrayList<AppInfo>()
         progressDialog = ProgressDialog(this)
@@ -70,19 +86,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         doit().execute()
 
-        val mActivityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        /*val mActivityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val RunningTask = mActivityManager.getRunningTasks(1)
         val ar = RunningTask[0]
         val activityOnTop = ar.topActivity.packageName
         Toast.makeText(this, activityOnTop, Toast.LENGTH_SHORT).show()
         Log.d("Task", activityOnTop)
-
+*/
 
         start_button.setOnClickListener {
             forgroundToastService?.start(baseContext)
             Toast.makeText(baseContext, "Service Started", Toast.LENGTH_SHORT).show()
             finish()
         }
+
     }
 
     inner class doit : AsyncTask<Void, Void, Void>() {
@@ -223,5 +240,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         drawer_layout.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        var isActive = devicePolicyManager?.isAdminActive(compName)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            499 -> {
+                if (requestCode == Activity.RESULT_OK)
+                    Toast.makeText(this, "Device Admin Enabled", Toast.LENGTH_SHORT).show()
+                else
+                    Toast.makeText(this, "Some Error Occured to enable device admin", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

@@ -14,6 +14,7 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_lock.*
 import java.io.IOException
 import java.security.*
@@ -206,5 +207,9 @@ class LockActivity : AppCompatActivity() {
 
         // Declare a string variable for the key we’re going to use in our fingerprint authentication
         private val KEY_NAME = "yourKey"
+    }
+
+    override fun onBackPressed() {
+        Toast.makeText(this, "Back Disabled", Toast.LENGTH_SHORT).show()
     }
 }

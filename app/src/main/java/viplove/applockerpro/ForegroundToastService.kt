@@ -31,6 +31,18 @@ class ForegroundToastService : Service() {
         context.stopService(Intent(context, ForegroundToastService::class.java))
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val res = super.onStartCommand(intent, flags, startId)
+        start(baseContext)
+        return Service.START_STICKY
+    }
+
+    override fun onTaskRemoved(intent: Intent) {
+        super.onTaskRemoved(intent)
+        val intent = Intent(this, this.javaClass)
+        startService(intent)
+    }
+
     @Nullable
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -75,7 +87,7 @@ class ForegroundToastService : Service() {
                 }
                 session?.getCurrent(packageName)
             }
-            .timeout(1000)
+            .timeout(500)
             .start(this)
     }
 
@@ -107,16 +119,16 @@ class ForegroundToastService : Service() {
                 .setAutoCancel(false)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText("Tap to Stop Service")
-                .setContentIntent(
-                    PendingIntent.getBroadcast(
-                        this,
-                        0,
-                        Intent(STOP_SERVICE),
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                    )
-                )
                 .setWhen(0)
                 .build()
+            /*.setContentIntent(
+                PendingIntent.getBroadcast(
+                    this,
+                    0,
+                    Intent(STOP_SERVICE),
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )*/
         } else {
             NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
