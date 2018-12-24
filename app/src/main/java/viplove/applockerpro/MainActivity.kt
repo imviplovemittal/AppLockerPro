@@ -20,6 +20,7 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.text.Html
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import com.rvalerio.fgchecker.Utils.hasUsageStatsPermission
@@ -41,6 +42,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var forgroundToastService: ForegroundToastService? = null
     private var selectedAppList: HashSet<String>? = null
     private var session: Session? = null
+    private var systemEnabled: Boolean? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +63,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun initialise() {
 
-        supportActionBar?.title = Html.fromHtml("<font color=\"#008577\">" + getString(R.string.app_name) + "</font>")
+        supportActionBar?.title = Html.fromHtml("<font color=\"#4275E3\">" + getString(R.string.app_name) + "</font>")
         session = Session(this)
         selectedAppList = session?.getStringSet(Session.APP_LIST) as HashSet<String>
         forgroundToastService = ForegroundToastService()
@@ -89,12 +91,59 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         progressDialog?.show()
 
         doit().execute()
+        systemEnabled = false
 
         start_button.setOnClickListener {
             session?.saveCheckedAppList(AppAdapter.statified.newAppList)
             forgroundToastService?.start(baseContext)
             Toast.makeText(baseContext, "Service Started", Toast.LENGTH_SHORT).show()
             finish()
+        }
+
+    }
+
+    inner class doitSystem : AsyncTask<Void, Void, Void>() {
+
+        override fun doInBackground(vararg params: Void?): Void? {
+
+            try {
+                val packageManager = packageManager
+                val mainIntent = Intent(Intent.ACTION_MAIN, null)
+                mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+                res?.clear()
+                val appList = packageManager.queryIntentActivities(mainIntent, 0)
+                Collections.sort(appList, ResolveInfo.DisplayNameComparator(packageManager))
+                val apps = packageManager.getInstalledPackages(0)
+                for (i in apps.indices) {
+                    val p = apps[i]
+
+                    val newInfo = AppInfo()
+                    newInfo.appname = p.applicationInfo.loadLabel(getPackageManager()).toString()
+                    newInfo.pname = p.packageName
+                    newInfo.versionName = p.versionName
+                    newInfo.versionCode = p.versionCode
+                    newInfo.icon = p.applicationInfo.loadIcon(getPackageManager())
+                    res?.add(newInfo)
+                }
+                res?.sortBy { appInfo: AppInfo -> appInfo.appname.toUpperCase() }
+                res?.sortBy { appInfo: AppInfo -> !(session?.getStringSet(Session.APP_LIST)?.contains(appInfo.pname))!! }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            return null
+        }
+
+        override fun onPostExecute(result: Void?) {
+            try {
+                app_recycler.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
+                app_recycler.setHasFixedSize(true)
+                app_recycler.adapter = AppAdapter(this@MainActivity, res!!, selectedAppList!!)
+                progressDialog?.dismiss()
+            } catch (e: java.lang.Exception) {
+                progressDialog?.dismiss()
+            }
         }
 
     }
@@ -107,7 +156,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 val packageManager = packageManager
                 val mainIntent = Intent(Intent.ACTION_MAIN, null)
                 mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-
+                res?.clear()
                 val appList = packageManager.queryIntentActivities(mainIntent, 0)
                 Collections.sort(appList, ResolveInfo.DisplayNameComparator(packageManager))
                 val apps = packageManager.getInstalledPackages(0)
@@ -126,6 +175,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     res?.add(newInfo)
                 }
                 res?.sortBy { appInfo: AppInfo -> appInfo.appname.toUpperCase() }
+                res?.sortBy { appInfo: AppInfo -> !(session?.getStringSet(Session.APP_LIST)?.contains(appInfo.pname))!! }
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -191,19 +241,36 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    /*override fun onCreateOptionsMenu(menu: Menu): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
-    }*/
+    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
-            R.id.action_settings -> {
-                forgroundToastService?.stop(baseContext)
+            R.id.action_system_apps -> {
+                if(!systemEnabled!!) {
+                    progressDialog = ProgressDialog(this)
+                    progressDialog?.setMessage("Fetching Data...")
+                    progressDialog?.setCancelable(false)
+                    progressDialog?.show()
+
+                    doitSystem().execute()
+                    systemEnabled = true
+                }
+                else{
+                    progressDialog = ProgressDialog(this)
+                    progressDialog?.setMessage("Fetching Data...")
+                    progressDialog?.setCancelable(false)
+                    progressDialog?.show()
+
+                    doit().execute()
+                    systemEnabled = false
+                }
                 return true
             }
             else -> return super.onOptionsItemSelected(item)
