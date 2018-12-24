@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.arch.persistence.room.Room
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -13,6 +14,11 @@ import android.os.IBinder
 import android.support.annotation.Nullable
 import android.support.v4.app.NotificationCompat
 import com.rvalerio.fgchecker.AppChecker
+import viplove.applockerpro.room.AppDatabase
+import viplove.applockerpro.room.AppUsage
+import viplove.applockerpro.room.AppUsageDao
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class ForegroundToastService : Service() {
@@ -23,8 +29,14 @@ class ForegroundToastService : Service() {
     private var appChecker: AppChecker? = null
     private var session: Session? = null
 
+    var appUsageDao: AppUsageDao? = null
+
     fun start(context: Context) {
         context.startService(Intent(context, ForegroundToastService::class.java))
+        appUsageDao = Room.databaseBuilder(context, AppDatabase::class.java, "db-app-usage")
+            .allowMainThreadQueries()
+            .build()
+            .getAppUsageDao()
     }
 
     fun stop(context: Context) {
@@ -78,11 +90,33 @@ class ForegroundToastService : Service() {
                 if (session?.getStringSet(Session.APP_LIST)?.contains(packageName) == true) {
                     if (session?.getStringValue(Session.CURRENT) == packageName) {
                     } else {
+                        val date = SimpleDateFormat("dd-MMM-yyyy").format(Calendar.getInstance().time)
+                        if (appUsageDao?.getPackages(date)?.contains(
+                                packageName
+                            ) == true
+                        ) {
+                            appUsageDao?.updateUsage(date, packageName)
+                        } else {
+                            appUsageDao?.insert(AppUsage(packageName, 0, date))
+                            appUsageDao?.updateUsage(date, packageName)
+                        }
                         session?.getCurrent(packageName)
                         val i = Intent(this, LockActivity::class.java)
                         i.putExtra("package", packageName)
                         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         startActivity(i)
+                    }
+                }
+                if(session?.getStringValue(Session.CURRENT) != packageName){
+                    val date = SimpleDateFormat("dd-MMM-yyyy").format(Calendar.getInstance().time)
+                    if (appUsageDao?.getPackages(date)?.contains(
+                            packageName
+                        ) == true
+                    ) {
+                        appUsageDao?.updateUsage(date, packageName)
+                    } else {
+                        appUsageDao?.insert(AppUsage(packageName, 0, date))
+                        appUsageDao?.updateUsage(date, packageName)
                     }
                 }
                 session?.getCurrent(packageName)

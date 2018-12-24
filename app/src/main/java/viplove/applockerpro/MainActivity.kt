@@ -6,15 +6,16 @@ import android.app.ProgressDialog
 import android.app.admin.DevicePolicyManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
+import android.arch.persistence.room.Room
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
+import android.graphics.Color
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.design.widget.NavigationView
-import android.support.v4.content.ContextCompat
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
@@ -27,6 +28,8 @@ import com.rvalerio.fgchecker.Utils.hasUsageStatsPermission
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import viplove.applockerpro.room.AppDatabase
+import viplove.applockerpro.room.AppUsageDao
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -43,6 +46,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var selectedAppList: HashSet<String>? = null
     private var session: Session? = null
     private var systemEnabled: Boolean? = null
+    private var appUsageDao: AppUsageDao? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +56,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toggle = ActionBarDrawerToggle(
             this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
-        toggle.drawerArrowDrawable.color = ContextCompat.getColor(this, R.color.colorPrimaryDark)
+        toggle.drawerArrowDrawable.color = Color.parseColor("#616161")
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
 
@@ -63,7 +67,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun initialise() {
 
-        supportActionBar?.title = Html.fromHtml("<font color=\"#4275E3\">" + getString(R.string.app_name) + "</font>")
+        supportActionBar?.title = Html.fromHtml("<font color=\"#616161\">" + getString(R.string.app_name) + "</font>")
+
         session = Session(this)
         selectedAppList = session?.getStringSet(Session.APP_LIST) as HashSet<String>
         forgroundToastService = ForegroundToastService()
@@ -100,6 +105,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
         }
 
+        appUsageDao = Room.databaseBuilder(this, AppDatabase::class.java, "db-app-usage")
+            .allowMainThreadQueries()
+            .build()
+            .getAppUsageDao()
     }
 
     inner class doitSystem : AsyncTask<Void, Void, Void>() {
@@ -253,7 +262,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             R.id.action_system_apps -> {
-                if(!systemEnabled!!) {
+                if (!systemEnabled!!) {
                     progressDialog = ProgressDialog(this)
                     progressDialog?.setMessage("Fetching Data...")
                     progressDialog?.setCancelable(false)
@@ -261,8 +270,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                     doitSystem().execute()
                     systemEnabled = true
-                }
-                else{
+                } else {
                     progressDialog = ProgressDialog(this)
                     progressDialog?.setMessage("Fetching Data...")
                     progressDialog?.setCancelable(false)
@@ -296,7 +304,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             }
             R.id.nav_send -> {
-
+                val usages = appUsageDao?.getAppUsages()
+                Toast.makeText(this, usages?.toString(), Toast.LENGTH_SHORT).show()
             }
         }
 
