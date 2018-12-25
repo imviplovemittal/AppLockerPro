@@ -25,6 +25,7 @@
                 android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
+
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
@@ -34,7 +35,7 @@
                 android:enabled="true"
                 android:exported="false"/>
 
-        <receiver android:name="viplove.applockerpro.CommonReceiver">
+        <receiver android:name=".CommonReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
@@ -45,21 +46,31 @@
                 <action android:name="android.intent.action.USER_PRESENT"/>
             </intent-filter>
         </receiver>
+        <receiver
+                android:name=".MyAdmin"
+                android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                    android:name="android.app.device_admin"
+                    android:resource="@xml/policies"/>
 
-        <receiver android:name=".MyAdmin" android:permission="android.permission.BIND_DEVICE_ADMIN">
-            <meta-data android:name="android.app.device_admin"
-                       android:resource="@xml/policies"/>
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/>
             </intent-filter>
         </receiver>
 
-        <activity android:name=".LockActivity"
-                  android:theme="@style/AppTheme.NoActionBar">
+        <activity
+                android:name=".LockActivity"
+                android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity android:name=".Fingerprint">
         </activity>
-        <meta-data android:name="preloaded_fonts" android:resource="@array/preloaded_fonts"/>
+
+        <meta-data
+                android:name="preloaded_fonts"
+                android:resource="@array/preloaded_fonts"/>
+
+        <activity android:name=".appusage.AppUsageActivity">
+        </activity>
     </application>
 
 </manifest>

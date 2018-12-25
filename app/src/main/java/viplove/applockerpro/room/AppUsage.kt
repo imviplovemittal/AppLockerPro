@@ -6,7 +6,9 @@ import android.support.annotation.NonNull
 
 @Entity(tableName = "app_usage")
 data class AppUsage(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    var id: Int = 0,
+
     @NonNull
     var appPackage: String,
     var noUsed: Int? = 0,

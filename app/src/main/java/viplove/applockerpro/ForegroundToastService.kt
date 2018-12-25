@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
 import android.support.annotation.Nullable
@@ -32,7 +33,10 @@ class ForegroundToastService : Service() {
     var appUsageDao: AppUsageDao? = null
 
     fun start(context: Context) {
-        context.startService(Intent(context, ForegroundToastService::class.java))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            context.startForegroundService(Intent(context, ForegroundToastService::class.java))
+        else
+            context.startService(Intent(context, ForegroundToastService::class.java))
         appUsageDao = Room.databaseBuilder(context, AppDatabase::class.java, "db-app-usage")
             .allowMainThreadQueries()
             .build()
@@ -52,7 +56,10 @@ class ForegroundToastService : Service() {
     override fun onTaskRemoved(intent: Intent) {
         super.onTaskRemoved(intent)
         val intent = Intent(this, this.javaClass)
-        startService(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            startForegroundService(intent)
+        else
+            startService(intent)
     }
 
     @Nullable
@@ -62,10 +69,40 @@ class ForegroundToastService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        //NotificationHelper(this)
+        startForeground(1, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, NotificationHelper.Statified.ALP_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(Color.parseColor("#4275E3"))
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(false)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText("Service Running")
+                .setWhen(0)
+                .build()
+        } else {
+            NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(false)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText("Service Running")
+                .setContentIntent(
+                    PendingIntent.getBroadcast(
+                        this,
+                        0,
+                        Intent(STOP_SERVICE),
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                )
+                .setWhen(0)
+                .build()
+        })
         registerReceivers()
         startChecker()
-        createStickyNotification()
-        NotificationHelper(this)
+        //createStickyNotification()
         session = Session(this)
     }
 
@@ -97,7 +134,7 @@ class ForegroundToastService : Service() {
                         ) {
                             appUsageDao?.updateUsage(date, packageName)
                         } else {
-                            appUsageDao?.insert(AppUsage(packageName, 0, date))
+                            appUsageDao?.insert(AppUsage(0, packageName, 0, date))
                             appUsageDao?.updateUsage(date, packageName)
                         }
                         session?.getCurrent(packageName)
@@ -107,7 +144,7 @@ class ForegroundToastService : Service() {
                         startActivity(i)
                     }
                 }
-                if(session?.getStringValue(Session.CURRENT) != packageName){
+                if (session?.getStringValue(Session.CURRENT) != packageName) {
                     val date = SimpleDateFormat("dd-MMM-yyyy").format(Calendar.getInstance().time)
                     if (appUsageDao?.getPackages(date)?.contains(
                             packageName
@@ -115,7 +152,7 @@ class ForegroundToastService : Service() {
                     ) {
                         appUsageDao?.updateUsage(date, packageName)
                     } else {
-                        appUsageDao?.insert(AppUsage(packageName, 0, date))
+                        appUsageDao?.insert(AppUsage(0, packageName, 0, date))
                         appUsageDao?.updateUsage(date, packageName)
                     }
                 }

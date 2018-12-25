@@ -6,7 +6,6 @@ import android.app.ProgressDialog
 import android.app.admin.DevicePolicyManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
-import android.arch.persistence.room.Room
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -28,8 +27,7 @@ import com.rvalerio.fgchecker.Utils.hasUsageStatsPermission
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import viplove.applockerpro.room.AppDatabase
-import viplove.applockerpro.room.AppUsageDao
+import viplove.applockerpro.appusage.AppUsageActivity
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -46,7 +44,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var selectedAppList: HashSet<String>? = null
     private var session: Session? = null
     private var systemEnabled: Boolean? = null
-    private var appUsageDao: AppUsageDao? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,10 +102,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
         }
 
-        appUsageDao = Room.databaseBuilder(this, AppDatabase::class.java, "db-app-usage")
-            .allowMainThreadQueries()
-            .build()
-            .getAppUsageDao()
     }
 
     inner class doitSystem : AsyncTask<Void, Void, Void>() {
@@ -304,8 +297,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             }
             R.id.nav_send -> {
-                val usages = appUsageDao?.getAppUsages()
-                Toast.makeText(this, usages?.toString(), Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, AppUsageActivity::class.java))
             }
         }
 

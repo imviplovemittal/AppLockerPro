@@ -21,4 +21,10 @@ interface AppUsageDao {
 
     @Query("UPDATE app_usage SET noUsed = noUsed + 1 WHERE date = :date AND appPackage = :appPackage")
     fun updateUsage(date: String, appPackage: String)
+
+    @Query("SELECT DISTINCT date FROM app_usage")
+    fun getDates(): List<String>
+
+    @Query("SELECT * FROM app_usage WHERE date = :date")
+    fun getAppUsagesByDate(date: String): List<AppUsage>
 }
