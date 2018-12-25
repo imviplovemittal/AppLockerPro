@@ -48,15 +48,17 @@ class AppDateAdapter(val context: Context, private val dates: List<String>) :
                 itemView.date_wise_recycler.setHasFixedSize(false)
                 itemView.date_wise_recycler.adapter = AppDateWiseAdapter(context, apps, pm)
                 itemView.date_wise_recycler.visibility = View.VISIBLE
+                itemView.expand_icon.switchState()
             } else
                 itemView.date_textview.text = date
             itemView.date_textview.setOnClickListener {
+                itemView.expand_icon.switchState(true)
                 if (itemView.date_wise_recycler.visibility == View.GONE) {
+                    itemView.date_wise_recycler.visibility = View.VISIBLE
                     itemView.date_wise_recycler.layoutManager =
                             LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true)
                     itemView.date_wise_recycler.setHasFixedSize(false)
                     itemView.date_wise_recycler.adapter = AppDateWiseAdapter(context, apps, pm)
-                    itemView.date_wise_recycler.visibility = View.VISIBLE
                 } else {
                     itemView.date_wise_recycler.visibility = View.GONE
                 }
